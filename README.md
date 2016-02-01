@@ -1,2 +1,3 @@
 # ListViewSwipe
 多个列表页push滑动,间隔页面也能像相邻页面一样平缓无缝衔接滑出来...
+![image](https://github.com/wswei99/ListViewSwipe/text/listviewSwipe.gif )  
