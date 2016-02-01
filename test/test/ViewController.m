@@ -23,7 +23,9 @@
     //点击所在的视图页下标(0~5)
     int num;
 }
-@property (nonatomic,strong )UIScrollView *scrollView;
+@property (nonatomic,strong) UIScrollView *scrollView;
+//选中btn
+@property (nonatomic,strong) UIButton *selectBtn;
 @end
 
 @implementation ViewController
@@ -38,10 +40,15 @@
     for (int i = 0; i< 5; i++) {
         UIButton *btn = [UIButton buttonWithType: UIButtonTypeCustom];
         [btn setTitle:[NSString stringWithFormat:@"%d视图",i+1] forState:UIControlStateNormal];
-        [btn setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+        [btn setTitleColor:[UIColor grayColor] forState:UIControlStateNormal];
+        [btn setTitleColor:[UIColor redColor] forState:UIControlStateSelected];
         btn.frame = CGRectMake(Screen_Width/5 *i +5, 20, Screen_Width/5 -5, 30);
         btn.backgroundColor = [UIColor cyanColor];
         btn.tag = 100 + i;
+        if (0 == i) {
+            self.selectBtn = btn;
+            self.selectBtn.selected = YES;
+        }
         [btn addTarget: self action:@selector(btnClick:) forControlEvents:UIControlEventTouchUpInside];
         [self.view addSubview:btn];
     }
@@ -72,6 +79,10 @@
 
 -(void) btnClick:(UIButton *)btn
 {
+    
+    self.selectBtn.selected = !self.selectBtn.selected;
+    self.selectBtn = btn;
+    self.selectBtn.selected = YES;
     
     //第几个视图
      num = (int)btn.tag - 100;
@@ -114,6 +125,11 @@
 {
     int page = scrollView.contentOffset.x / CGRectGetWidth(scrollView.frame);
     selectIndex = page;
+    //获取动画结束后的btn
+    UIButton *btn = (UIButton *)[self.view viewWithTag:selectIndex + 100];
+    self.selectBtn.selected = NO;
+    self.selectBtn = btn;
+    self.selectBtn.selected = YES;
 }
 
 //点击Btn滑动动画结束后调用
