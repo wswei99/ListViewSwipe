@@ -15,6 +15,8 @@
     解决:思路-->平缓推出下一页的前提是,两个页面相邻-->那相隔页面,如果经过我们调整,也能让它们相邻,问题就迎刃而解了.
     -->假设-->当前页为第一页...点击btn为最后一页,即第五页.点击后,让第一页和第四页交换位置-->把scrollview的视图 无动画 切换到第四页,那这个时候给人的感觉是,屏幕一点儿变化没有-->然后 动画 从第四页推出第五页-->最后,把第一页和第四页的位置重新对调回来...完成整个流程
    2016.2.1 ~不完美之处:快速点击多个btn,会造成没来得及归位,列表页错乱..有时间再想办法解决吧.写的有点儿粗糙.wswei99@126.com..有好想法也联系我吧
+    2016.2.2   修复不完美之处:方法一:在btn上增加浮层..点击一个btn后,开启浮层view 的用户交互..这样..下面所有的btn就不可点了..等动画完成后,,关闭浮层的用户交互..btn变成可点...(经过测试后..发现..如果变态版本的在两个Btn来回点..还是会卡主,所以在手动滑动后关闭浮层交互)
+                            方法二:添加BOOL状态值..比如.默认bool为yes..即可点...点击过后,变成no不可点..等动画结束后,再改成yes..完成循环
  */
 @interface ViewController ()<UIScrollViewDelegate>
 {
@@ -26,6 +28,8 @@
 @property (nonatomic,strong) UIScrollView *scrollView;
 //选中btn
 @property (nonatomic,strong) UIButton *selectBtn;
+//蒙层
+@property (nonatomic,strong) UIView *coverView;
 @end
 
 @implementation ViewController
@@ -53,6 +57,13 @@
         [self.view addSubview:btn];
     }
     
+    UIView *view = [[UIView alloc ]initWithFrame:CGRectMake(0, 20,Screen_Width, 30)];
+    view.backgroundColor = [UIColor clearColor];
+    view.userInteractionEnabled = NO;
+    [self.view addSubview:view];
+    self.coverView = view;
+    
+    
     //列表页承载器
     UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 55, Screen_Width, Screen_Height)];
     scrollView.backgroundColor = [UIColor greenColor];
@@ -79,45 +90,48 @@
 
 -(void) btnClick:(UIButton *)btn
 {
-    
-    self.selectBtn.selected = !self.selectBtn.selected;
-    self.selectBtn = btn;
-    self.selectBtn.selected = YES;
-    
-    //第几个视图
-     num = (int)btn.tag - 100;
-    
-    //点击页在当前页右面
-    if (num - selectIndex >1) {
-        //点击前的视图页
-        UIImageView *imageView1 = (UIImageView *)[self.view viewWithTag:selectIndex + 200];
-        //点击后即将出现的视图页  的  前一页
-        UIImageView *imageView2 = (UIImageView *)[self.view viewWithTag:num -1+200];
+    if (!self.coverView.userInteractionEnabled) {
+        self.coverView.userInteractionEnabled= !self.coverView.userInteractionEnabled;
+        self.selectBtn.selected = !self.selectBtn.selected;
+        self.selectBtn = btn;
+        self.selectBtn.selected = YES;
         
-        //将上两个视图位置替换
-        imageView1.frame = CGRectMake(Screen_Width *(num - 1), 0, Screen_Width, Screen_Height-55);
-        imageView2.frame = CGRectMake(Screen_Width *selectIndex, 0, Screen_Width, Screen_Height-55);
-        //这个时候,即将出现页的前一页,就变成了点击前的视图页,然后直接把scrollView设置成当前位置,动画记得关掉
-        [self.scrollView setContentOffset:CGPointMake(Screen_Width *(num -1), 0) animated:NO];
-        //接下来,从即将出现的前一页,往后一推,就是点击要出现的view,这个时候需要动画过度.
-        [self.scrollView setContentOffset:CGPointMake(Screen_Width * num, 0) animated:YES];
-
+        //第几个视图
+        num = (int)btn.tag - 100;
         
-    }else if(num - selectIndex < -1){//点击页在当前页左面
-        
-        UIImageView *imageView1 = (UIImageView *)[self.view viewWithTag:selectIndex + 200];
-        UIImageView *imageView2 = (UIImageView *)[self.view viewWithTag:num + 1 + 200];
-        imageView1.frame = CGRectMake(Screen_Width *(num + 1), 0, Screen_Width, Screen_Height -55);
-        imageView2.frame = CGRectMake(Screen_Width * selectIndex, 0, Screen_Width, Screen_Height - 55);
-        [self.scrollView setContentOffset:CGPointMake(Screen_Width * (num + 1), 0) animated:NO];
-        [self.scrollView setContentOffset:CGPointMake(Screen_Width * num, 0) animated:YES];
-        
-    }else if (num - selectIndex == 0){//点击页就是当前页
-        
-    }else{//点击页与当前页相邻,那就直接推出来
-        [self.scrollView setContentOffset:CGPointMake(Screen_Width *num, 0) animated:YES];
-        selectIndex = num;
+        //点击页在当前页右面
+        if (num - selectIndex >1) {
+            //点击前的视图页
+            UIImageView *imageView1 = (UIImageView *)[self.view viewWithTag:selectIndex + 200];
+            //点击后即将出现的视图页  的  前一页
+            UIImageView *imageView2 = (UIImageView *)[self.view viewWithTag:num -1+200];
+            
+            //将上两个视图位置替换
+            imageView1.frame = CGRectMake(Screen_Width *(num - 1), 0, Screen_Width, Screen_Height-55);
+            imageView2.frame = CGRectMake(Screen_Width *selectIndex, 0, Screen_Width, Screen_Height-55);
+            //这个时候,即将出现页的前一页,就变成了点击前的视图页,然后直接把scrollView设置成当前位置,动画记得关掉
+            [self.scrollView setContentOffset:CGPointMake(Screen_Width *(num -1), 0) animated:NO];
+            //接下来,从即将出现的前一页,往后一推,就是点击要出现的view,这个时候需要动画过度.
+            [self.scrollView setContentOffset:CGPointMake(Screen_Width * num, 0) animated:YES];
+            
+            
+        }else if(num - selectIndex < -1){//点击页在当前页左面
+            
+            UIImageView *imageView1 = (UIImageView *)[self.view viewWithTag:selectIndex + 200];
+            UIImageView *imageView2 = (UIImageView *)[self.view viewWithTag:num + 1 + 200];
+            imageView1.frame = CGRectMake(Screen_Width *(num + 1), 0, Screen_Width, Screen_Height -55);
+            imageView2.frame = CGRectMake(Screen_Width * selectIndex, 0, Screen_Width, Screen_Height - 55);
+            [self.scrollView setContentOffset:CGPointMake(Screen_Width * (num + 1), 0) animated:NO];
+            [self.scrollView setContentOffset:CGPointMake(Screen_Width * num, 0) animated:YES];
+            
+        }else if (num - selectIndex == 0){//点击页就是当前页
+            
+        }else{//点击页与当前页相邻,那就直接推出来
+            [self.scrollView setContentOffset:CGPointMake(Screen_Width *num, 0) animated:YES];
+            selectIndex = num;
+        }
     }
+    
     
 }
 //手动左右滑减速后调用
@@ -130,11 +144,13 @@
     self.selectBtn.selected = NO;
     self.selectBtn = btn;
     self.selectBtn.selected = YES;
+    self.coverView.userInteractionEnabled= NO;
 }
 
 //点击Btn滑动动画结束后调用
 -(void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView{
     [self endScrolling];
+    self.coverView.userInteractionEnabled= NO;
 }
 
 - (void)endScrolling
